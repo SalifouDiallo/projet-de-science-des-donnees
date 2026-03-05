@@ -6,6 +6,20 @@ Chaque ligne représente un nombre de cyclistes selon **l’heure**, **la direct
 
 ---
 
+## Contexte académique
+
+Ce projet a été réalisé dans le cadre du cours  
+**Science des données et intelligence d’affaires (8INF404)**  
+à l’**Université du Québec à Chicoutimi (UQAC)** durant la session **Automne 2025**.
+
+Description officielle du cours :  
+https://programmes.uqac.ca/8inf404
+
+Le projet a été réalisé en **équipe de quatre étudiants**.  
+Dans l’équipe, j’ai contribué principalement à **l’analyse exploratoire des données, à la visualisation et à la modélisation statistique**.
+
+---
+
 ## Question de recherche
 
 **Comment les facteurs temporels (heure, jour), contextuels (météo) et opérationnels (mode, direction) influencent-ils l’évolution du trafic cycliste moyen à Londres ?**
@@ -13,7 +27,7 @@ Chaque ligne représente un nombre de cyclistes selon **l’heure**, **la direct
 ### Objectif
 
 - Identifier des tendances utiles pour la planification urbaine  
-- Utilisation des outils du cours : visualisation, exploration, modèles de comptage (**Poisson / quasi-Poisson**)
+- Utiliser les outils du cours : visualisation, exploration, modèles de comptage (**Poisson / quasi-Poisson**)
 
 ---
 
@@ -31,7 +45,7 @@ Chaque ligne représente un nombre de cyclistes selon **l’heure**, **la direct
 - **mode** : 6 types  
 - **direction** : 4 directions  
 
-Aucune donnée personnelle → uniquement des comptages anonymes.
+Aucune donnée personnelle n’est présente dans ce jeu de données : il s’agit uniquement de **comptages anonymes de trafic cycliste**.
 
 ---
 
@@ -40,76 +54,90 @@ Aucune donnée personnelle → uniquement des comptages anonymes.
 ## Étape 1 – Nettoyage
 
 - Normalisation des noms (`clean_names`)  
-- Uniformisation (`day`, `weather`, `mode`, `direction`)  
+- Uniformisation des variables (`day`, `weather`, `mode`, `direction`)  
 - Conversion des types (facteurs et entiers)  
-- Suppression des doublons et NA  
+- Suppression des doublons et des valeurs manquantes  
 - Export des fichiers :  
-  - `tfl_clean.csv`  
-  - `tfl_clean.rds`
+
+- `tfl_clean.csv`  
+- `tfl_clean.rds`
 
 ---
 
 ## Étape 2 – Analyse exploratoire
 
-Trois graphiques principaux :
+Trois graphiques principaux ont été produits pour explorer les données.
 
 ### Histogramme du nombre de cyclistes  
-→ Distribution très asymétrique, beaucoup de zéros.
+→ Distribution très asymétrique, avec une forte présence de valeurs faibles et de zéros.
 
 ### Count moyen selon la météo  
-→ Trafic nettement plus élevé en *dry*.
+→ Le trafic cycliste est nettement plus élevé lorsque la météo est **dry**.
 
 ### Évolution du count moyen selon l’heure  
-→ Deux pics clairs : **7h–9h** et **16h–19h**.
+→ Deux pics très clairs apparaissent :  
 
-Ces visualisations respectent les bonnes pratiques vues en cours.
+- **7h–9h** (trajets domicile → travail)  
+- **16h–19h** (trajets retour)
+
+Ces visualisations respectent les bonnes pratiques de visualisation de données vues dans le cours.
 
 ---
 
 ## Étape 3 – Modèle de Poisson / quasi-Poisson
 
 Modèle ajusté :
-
 count ~ time + weather + mode + direction
 
 
-- Surdispersion élevée (**≈ 17.6**)  
-→ utilisation du **quasi-Poisson**
+Une **surdispersion élevée** a été observée (**≈ 17.6**), ce qui a conduit à utiliser un modèle **quasi-Poisson**.
 
 ### Résultats (IRR)
 
-- Créneaux horaires > 6 (ex. **7h30–8h15**)  
-- Météo *dry* → hausse marquée du trafic  
-- Modes comme *conventional cycles* → volumes plus élevés  
-- Direction *northbound* → plus fréquentée  
+Les principaux résultats montrent que :
 
-Les IRR sont interprétés de manière descriptive.
+- Certains créneaux horaires ont des **IRR supérieurs à 6** (ex. **7h30–8h15**)  
+- La météo **dry** est associée à une **hausse marquée du trafic cycliste**  
+- Les modes comme **conventional cycles** présentent des volumes plus élevés  
+- La direction **northbound** apparaît plus fréquentée
+
+Les IRR sont interprétés de manière descriptive dans le cadre de l’analyse.
 
 ---
 
 # Résultats principaux
 
-- **Pattern bimodal** : pic matin + pic soir  
-- **Dry** = trafic cycliste beaucoup plus élevé  
-- **Modes & directions** influencent fortement le volume  
-- Le **quasi-Poisson** confirme les observations visuelles
+- **Pattern bimodal** du trafic cycliste : pic le matin et pic le soir  
+- Les conditions **dry** augmentent significativement la fréquentation  
+- Les **modes de déplacement** et les **directions** influencent fortement les volumes observés  
+- Le modèle **quasi-Poisson** confirme les tendances observées dans les visualisations
 
 ---
 
 # Limites
 
-- Une seule vague (W1 spring) → aucune saisonnalité  
-- Données surtout *weekday*  
-- Pas de données socio-démographiques  
-- `site_id` non modélisé
+Certaines limites doivent être mentionnées :
+
+- Les données proviennent d’une seule vague (**W1 spring**)  
+- L’analyse concerne principalement des **jours de semaine**  
+- Absence de variables socio-démographiques  
+- La variable `site_id` n’a pas été intégrée dans le modèle
 
 ---
 
 # Conclusion
 
-Les analyses exploratoires et le modèle quasi-Poisson montrent que les **facteurs temporels** (heures de pointe) et **contextuels** (météo) influencent significativement les volumes cyclistes.
+Les analyses exploratoires et le modèle quasi-Poisson montrent que les **facteurs temporels** (heures de pointe) et **contextuels** (météo) influencent significativement les volumes cyclistes à Londres.
 
-Ce projet fournit des **insights importants** pour la planification des infrastructures cyclables et illustre l’application du workflow **tidyverse + GLM** enseigné dans le cours.
+Ce projet illustre l’application complète du **workflow de science des données** enseigné dans le cours, incluant :
+
+- nettoyage des données  
+- visualisation exploratoire  
+- modélisation statistique avec **GLM**
+
+Les résultats fournissent également des **indications utiles pour la planification des infrastructures cyclables**.
+
+---
 
 ## Data Visualization
 
