@@ -1,5 +1,10 @@
 ## Data Visualization
 
-The following visualization shows cycling traffic patterns in London using the Transport for London dataset.
+### Distribution of cyclist counts
+![Histogram](docs/figures/histogram_cyclists.png)
 
-![Cycling data](docs/figures/cycling_plot.png)
+### Average cyclists by weather
+![Weather](docs/figures/cyclists_weather_barplot.png)
+
+### Average cyclists by hour
+![Hourly traffic](docs/figures/cyclists_by_hour.png)
