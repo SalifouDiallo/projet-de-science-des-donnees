@@ -1,0 +1,117 @@
+---
+title: "Étape 1 – Chargement et nettoyage des data TfL"
+author: "Équipe 15"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(tidyverse)
+library(janitor)
+```
+
+# Importation
+
+```{r}
+# Afficher le WD et le contenu de /data pour vérifier
+getwd()
+print(list.files("data"))
+
+# Chercher d'abord le fichier Inner-Part1 (printemps OU spring)
+candidates <- list.files(
+  "data",
+  pattern = "2024.*Inner-Part1\\.csv$",
+  full.names = TRUE
+)
+
+# Si introuvable, on tente un autre CSV 2024 (ex: tfl_cycling_2024_printemps.csv)
+if (length(candidates) == 0) {
+  candidates <- list.files(
+    "data",
+    pattern = "(?i)2024.*(printemps|spring).*\\.csv$",
+    full.names = TRUE
+  )
+}
+
+# Si toujours rien, on arrête avec un message clair
+if (length(candidates) == 0) {
+  stop("Aucun fichier 2024 détecté dans 'data/'. Vérifie le nom exact du CSV.")
+}
+
+# Prendre le premier match (ou ajuste si tu veux un choix précis)
+csv_path <- candidates[1]
+message("Fichier détecté : ", csv_path)
+
+# Lire
+options(readr.show_col_types = FALSE)
+data_raw <- readr::read_csv(csv_path)
+
+# Aperçu
+dplyr::glimpse(data_raw)
+nrow_raw <- nrow(data_raw); nrow_raw
+```
+
+# Nettoyage de la base
+
+```{r}
+data_clean <- janitor::clean_names(data_raw)
+
+data_clean <- data_clean |>
+dplyr::mutate(
+count = suppressWarnings(as.integer(count)),
+time  = factor(as.character(time)),
+day   = as.character(day),
+day   = dplyr::case_when(
+day %in% c("Weekday","weekday") ~ "Weekday",
+day %in% c("Weekend","weekend") ~ "Weekend",
+TRUE ~ day
+),
+day   = factor(day, levels = c("Weekday","Weekend")),
+weather   = stringr::str_to_lower(as.character(weather)),
+mode      = stringr::str_to_lower(as.character(mode)),
+direction = stringr::str_to_lower(as.character(direction))
+)
+
+# Retirer doublons exacts
+
+data_clean <- dplyr::distinct(data_clean)
+
+# Garder seulement les lignes sans NA dans les colonnes clés
+
+essentielles <- c("count","time","day","weather","mode","direction")
+data_clean <- tidyr::drop_na(data_clean, dplyr::all_of(essentielles))
+
+nrow_clean <- nrow(data_clean)
+nrow_raw; nrow_clean
+
+summary(data_clean$count)
+table(data_clean$day, useNA = "ifany")
+table(data_clean$weather, useNA = "ifany")
+table(data_clean$mode, useNA = "ifany")
+table(data_clean$direction, useNA = "ifany")
+```
+
+# Sauvegarde 
+
+```{r}
+out_path <- "data/tfl_clean.csv"
+readr::write_csv(data_clean, out_path)
+
+# Vérification
+
+file.exists(out_path)
+round(file.size(out_path) / 1024^2, 1)  # taille en Mo
+nrow_clean
+```
+
+# (Option) sauvegarde RDS plus légère à recharger vite 
+
+```{r}
+# Utile pour éviter de tout ré-exécuter à chaque session
+
+readr::write_rds(data_clean, "data/tfl_clean.rds")
+```
+
+
+

@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Analyse du trafic cycliste à Londres (TfL)</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Équipe 15" />
+    <meta name="date" content="2025-11-24" />
+    <script src="libs/header-attrs-2.29/header-attrs.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+.title[
+# Analyse du trafic cycliste à Londres (TfL)
+]
+.subtitle[
+## Projet final – 8INF404 – Équipe 15
+]
+.author[
+### Équipe 15
+]
+.institute[
+### Université du Québec à Chicoutimi (UQAC)
+]
+.date[
+### 2025-11-24
+]
+
+---
+
+
+
+
+---
+
+class: center, middle
+
+# Analyse du trafic cycliste à Londres (TfL)
+### Projet final – 8INF404 – Équipe 15  
+(données TfL – printemps 2024)
+
+---
+
+# Plan de la présentation
+
+- Contexte &amp; question de recherche  
+- Description du jeu de données TfL  
+- Étape 1 – Nettoyage  
+- Étape 2 – Analyse exploratoire  
+- Étape 3 – Modèle de Poisson / quasi-Poisson  
+- Résultats, limites et conclusion  
+
+---
+
+class: center, middle
+
+# 1. Contexte &amp; question de recherche
+
+---
+
+# Contexte
+
+- Données publiques de **Transport for London (TfL)**
+- Comptages automatiques sur plusieurs sites
+- Période : **printemps 2024**
+- Observations toutes les **15 minutes**
+- &gt; 870 000 lignes : idéal pour  
+  - explorer les patterns  
+  - appliquer un modèle de Poisson  
+
+.pull-right[
+
+Table: Résumé des tailles et niveaux
+
+|  n_obs| n_time| n_day| n_weather| n_mode| n_direction|
+|------:|------:|-----:|---------:|------:|-----------:|
+| 870144|     64|     1|         2|      6|           4|
+]
+
+---
+
+# Question de recherche
+
+**Comment les facteurs temporels (heure), contextuels (météo) et opérationnels (mode, direction) influencent-ils le trafic cycliste moyen à Londres ?**
+
+Objectifs :
+
+- Identifier les heures de pointe  
+- Comparer météo dry vs wet  
+- Étudier les modes et directions  
+- Tester statistiquement via Poisson / quasi-Poisson  
+
+---
+
+class: center, middle
+
+# 2. Jeu de données TfL
+
+---
+
+# Variables principales
+
+- **count** : nombre de cyclistes  
+- **time** : 64 niveaux (15 min)  
+- **weather** : dry / wet  
+- **mode** : 6 types  
+- **direction** : 4 directions  
+
+
+Table: Aperçu des données TfL nettoyées
+
+|date       |time     |day     |weather |mode        |direction  | count|
+|:----------|:--------|:-------|:-------|:-----------|:----------|-----:|
+|09/07/2024 |06:00:00 |Weekday |dry     |cargo bikes |northbound |     0|
+|09/07/2024 |06:15:00 |Weekday |dry     |cargo bikes |northbound |     0|
+|09/07/2024 |06:30:00 |Weekday |dry     |cargo bikes |northbound |     0|
+|09/07/2024 |06:45:00 |Weekday |dry     |cargo bikes |northbound |     0|
+|09/07/2024 |07:00:00 |Weekday |dry     |cargo bikes |northbound |     0|
+|09/07/2024 |07:15:00 |Weekday |dry     |cargo bikes |northbound |     0|
+
+---
+
+class: center, middle
+
+# 3. Étape 1 – Nettoyage
+
+---
+
+# Nettoyage (résumé)
+
+- clean_names()  
+- Uniformisation : day, weather, mode, direction  
+- Conversions : facteurs + entiers  
+- Suppression : doublons + NA essentiels  
+- Export :  
+  - *tfl_clean.csv*  
+  - *tfl_clean.rds*  
+
+Garantit une base propre pour l’analyse.
+
+---
+
+class: center, middle
+
+# 4. Étape 2 – Analyse exploratoire
+
+---
+
+# Histogramme du nombre de cyclistes
+
+![](presentation_files/figure-html/unnamed-chunk-3-1.png)&lt;!-- --&gt;
+
+- Distribution très asymétrique  
+- Beaucoup de **0**  
+- Quelques valeurs extrêmes (~500)
+
+---
+
+# Count moyen selon la météo
+
+![](presentation_files/figure-html/unnamed-chunk-4-1.png)&lt;!-- --&gt;
+
+- Trafic plus élevé en condition **dry**
+- Descriptif → pas causal
+
+---
+
+# Count moyen selon l'heure
+
+![](presentation_files/figure-html/unnamed-chunk-5-1.png)&lt;!-- --&gt;
+
+- Deux pics : **7h–9h** et **16h–19h**
+
+---
+
+class: center, middle
+
+# 5. Étape 3 – Modèle de Poisson / quasi-Poisson
+
+---
+
+# Vérification de la surdispersion
+
+
+Table: Surdispersion du modèle Poisson
+
+| Dispersion ratio|
+|----------------:|
+|             17.6|
+
+- Ratio ≈ **17.6** → surdispersion énorme  
+On utilise un **quasi-Poisson**  
+
+---
+
+# Résultats du quasi-Poisson (IRR)
+
+Points clés :
+
+- Plusieurs heures de pointe ont **IRR &gt; 6**  
+- Météo dry → IRR supérieur  
+- conventional cycles → plus de trafic  
+- northbound → direction la plus chargée  
+
+IRR = interprétation **descriptive**, pas causale.
+
+---
+
+class: center, middle
+
+# 6. Résultats, limites et conclusion
+
+---
+
+# Résultats principaux
+
+- Pattern bimodal (matin / soir)  
+- Météo dry → trafic plus élevé  
+- Différences fortes entre modes &amp; directions  
+- Modèle quasi-Poisson confirme les patterns exploratoires  
+
+---
+
+# Limites
+
+- Une seule vague → pas de saisonnalité  
+- Données mostly Weekday  
+- Pas de variables socio-démographiques  
+- Effets propres par site_id non modélisés  
+
+---
+
+# Conclusion
+
+- Les facteurs temporels &amp; météo influencent fortement le trafic cycliste  
+- Cohérence entre exploration &amp; modèle  
+- Illustration claire de tidyverse + modèles Poisson  
+
+.center[
+**Prochaine étape :**  
+→ modèles mixtes, effets aléatoires, interactions
+]
+
+---
+
+class: center, middle
+
+# Merci !  
+## Questions ?
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+  "ratio": "16:9",
+  "highlightStyle": "github",
+  "highlightLines": true,
+  "countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

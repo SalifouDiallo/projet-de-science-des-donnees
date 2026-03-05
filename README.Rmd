@@ -1,0 +1,102 @@
+---
+title: "Résumé exécutif – Projet final TfL (Équipe 15)"
+output: html_document
+---
+
+# Résumé exécutif
+
+Ce projet analyse les **patterns de mobilité cycliste à Londres** à partir du jeu de données public *Transport for London (TfL)*. Les données proviennent des systèmes officiels de comptage automatisé et couvrent plus de **870 000 observations** collectées au printemps 2024 (intervalle de 15 minutes). Chaque ligne représente le nombre de cyclistes enregistrés à une heure donnée, dans une direction et un mode de déplacement spécifique.
+
+Notre **question de recherche** est la suivante :
+
+> *Comment les facteurs temporels (heure, jour), contextuels (météo) et opérationnels (mode, direction) influencent-ils l’évolution du trafic cycliste moyen à Londres ?*
+
+L’objectif est d’identifier clairement des tendances utiles pour la planification urbaine, en appliquant les outils statistiques enseignés dans ce cours (visualisation, exploration, modèles de comptage).
+
+---
+
+# Données
+
+Le fichier nettoyé final `tfl_clean.rds` contient **870 144 lignes** et **11 variables**, dont :
+
+- **count** : nombre de cyclistes (variable réponse)  
+- **time** : heure (64 niveaux)  
+- **day** : Weekday seulement dans ce sous-ensemble  
+- **weather** : dry / wet  
+- **mode** : 6 types (ex. conventional cycles, cargo bikes…)  
+- **direction** : 4 directions (northbound, southbound, eastbound, westbound)  
+
+Les données ne contiennent **aucune information personnelle**, seulement des comptages agrégés, satisfaisant aux exigences de confidentialité.
+
+---
+
+# Méthodologie
+
+## Étape 1 – Nettoyage
+- Normalisation des noms de variables (*clean_names*).  
+- Uniformisation de `day`, `weather`, `mode`, `direction`.  
+- Conversion des types (facteurs et entiers).  
+- Suppression des doublons et des lignes incomplètes.  
+- Export des fichiers propres `tfl_clean.csv` et `tfl_clean.rds`.
+
+## Étape 2 – Analyse exploratoire
+
+Trois graphiques principaux ont été produits :
+
+1. **Histogramme du nombre de cyclistes**  
+   → Distribution très asymétrique, avec beaucoup de zéros.
+
+2. **Count moyen selon la météo**  
+   → Le trafic est systématiquement plus élevé lorsque la météo est *dry*.
+
+3. **Évolution du count moyen selon l’heure**  
+   → Deux pics très nets : **matin (7h–9h)** et **fin d’après-midi (16h–19h)**.
+
+Ces observations respectent les principes vus en classe (axes honnêtes, absence d’interprétation causale, visualisations non trompeuses).
+
+## Étape 3 – Modèle de Poisson / quasi-Poisson
+
+Un modèle de Poisson a été ajusté :
+
+count ~ time + weather + mode + direction
+
+
+La surdispersion étant élevée (ratio ≈ **17.6**), un **modèle quasi-Poisson** a été utilisé.
+
+Les résultats montrent que :
+
+- Les heures de pointe présentent des **IRR très supérieurs à 1**  
+  (ex : IRR > 6 pour 7h30–8h15)  
+- La météo *dry* augmente fortement le trafic.  
+- Certains modes (**conventional cycles**) génèrent davantage de mouvements.  
+- Certaines directions (**northbound**) sont nettement plus fréquentées.
+
+Les IRR sont interprétés de manière descriptive, sans inférence causale.
+
+---
+
+# Résultats principaux
+
+- Le trafic cycliste suit un **pattern bimodal robuste** (matin / soir).  
+- La météo constitue un facteur déterminant.  
+- Les modes et directions montrent des écarts importants, utiles pour l’aménagement urbain.  
+- Le modèle quasi-Poisson confirme statistiquement les observations visuelles.
+
+---
+
+# Limites
+
+- Une seule vague (W1 spring) → pas de saisonnalité.  
+- Pas de variables expliquant les comportements humains (travail, écoles…).  
+- Le modèle ne capture pas les effets potentiels des sites individuels (`site_id`).  
+
+---
+
+# Conclusion
+
+Notre analyse montre une cohérence forte entre les résultats exploratoires et le modèle quasi-Poisson :  
+les facteurs temporels et contextuels influencent significativement les volumes cyclistes à Londres.  
+Les conclusions soutiennent l’interprétation des patterns horaires et l’impact de la météo,  
+tout en respectant les limites méthodologiques enseignées en classe.
+
+---

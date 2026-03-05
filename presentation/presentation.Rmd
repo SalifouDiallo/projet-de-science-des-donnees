@@ -1,0 +1,312 @@
+---
+title: "Analyse du trafic cycliste à Londres (TfL)"
+subtitle: "Projet final – 8INF404 – Équipe 15"
+author: "Équipe 15"
+institute: "Université du Québec à Chicoutimi (UQAC)"
+date: "`r Sys.Date()`"
+output:
+  xaringan::moon_reader:
+    css: xaringan-themer.css
+    lib_dir: libs
+    nature:
+      ratio: "16:9"
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(janitor)
+library(lubridate)
+library(broom)
+library(knitr)
+library(xaringanthemer)
+
+# Thème simple et propre
+style_xaringan(
+  text_color = "#222222",
+  title_slide_background_color = "#FFFFFF",
+  link_color = "#2C3E50",
+  header_color = "#1A5276"
+)
+
+# Charger les données (on remonte d'un niveau depuis /presentation)
+data <- readr::read_rds("../data/tfl_clean.rds")
+
+# Résumé des tailles et niveaux
+resume_niveaux <- data |>
+  summarise(
+    n_obs       = n(),
+    n_time      = n_distinct(time),
+    n_day       = n_distinct(day),
+    n_weather   = n_distinct(weather),
+    n_mode      = n_distinct(mode),
+    n_direction = n_distinct(direction)
+  )
+
+# Données pour graphiques
+data_plot <- data
+
+# Échantillon pour modèles
+set.seed(123)
+data_sub <- data |> sample_n(50000)
+
+# Modèle Poisson
+modele_pois <- glm(
+  count ~ time + weather + mode + direction,
+  data = data_sub,
+  family = poisson(link = "log")
+)
+
+# Surdispersion
+dispersion_ratio <- sum(residuals(modele_pois, type = "pearson")^2) /
+  modele_pois$df.residual
+
+# Quasi-Poisson
+modele_qpois <- glm(
+  count ~ time + weather + mode + direction,
+  data = data_sub,
+  family = quasipoisson(link = "log")
+)
+
+resultats_qpois <- broom::tidy(
+  modele_qpois, exponentiate = TRUE, conf.int = TRUE
+)
+```
+
+---
+
+class: center, middle
+
+# Analyse du trafic cycliste à Londres (TfL)
+### Projet final – 8INF404 – Équipe 15  
+(données TfL – printemps 2024)
+
+---
+
+# Plan de la présentation
+
+- Contexte & question de recherche  
+- Description du jeu de données TfL  
+- Étape 1 – Nettoyage  
+- Étape 2 – Analyse exploratoire  
+- Étape 3 – Modèle de Poisson / quasi-Poisson  
+- Résultats, limites et conclusion  
+
+---
+
+class: center, middle
+
+# 1. Contexte & question de recherche
+
+---
+
+# Contexte
+
+- Données publiques de **Transport for London (TfL)**
+- Comptages automatiques sur plusieurs sites
+- Période : **printemps 2024**
+- Observations toutes les **15 minutes**
+- > 870 000 lignes : idéal pour  
+  - explorer les patterns  
+  - appliquer un modèle de Poisson  
+
+.pull-right[
+```{r echo=FALSE}
+kable(resume_niveaux, caption = "Résumé des tailles et niveaux")
+```
+]
+
+---
+
+# Question de recherche
+
+**Comment les facteurs temporels (heure), contextuels (météo) et opérationnels (mode, direction) influencent-ils le trafic cycliste moyen à Londres ?**
+
+Objectifs :
+
+- Identifier les heures de pointe  
+- Comparer météo dry vs wet  
+- Étudier les modes et directions  
+- Tester statistiquement via Poisson / quasi-Poisson  
+
+---
+
+class: center, middle
+
+# 2. Jeu de données TfL
+
+---
+
+# Variables principales
+
+- **count** : nombre de cyclistes  
+- **time** : 64 niveaux (15 min)  
+- **weather** : dry / wet  
+- **mode** : 6 types  
+- **direction** : 4 directions  
+
+```{r echo=FALSE}
+data |>
+  select(date, time, day, weather, mode, direction, count) |>
+  head(6) |>
+  kable(caption = "Aperçu des données TfL nettoyées")
+```
+
+---
+
+class: center, middle
+
+# 3. Étape 1 – Nettoyage
+
+---
+
+# Nettoyage (résumé)
+
+- clean_names()  
+- Uniformisation : day, weather, mode, direction  
+- Conversions : facteurs + entiers  
+- Suppression : doublons + NA essentiels  
+- Export :  
+  - *tfl_clean.csv*  
+  - *tfl_clean.rds*  
+
+Garantit une base propre pour l’analyse.
+
+---
+
+class: center, middle
+
+# 4. Étape 2 – Analyse exploratoire
+
+---
+
+# Histogramme du nombre de cyclistes
+
+```{r echo=FALSE}
+ggplot(data_plot, aes(x = count)) +
+  geom_histogram(binwidth = 5, color = "white") +
+  labs(
+    title = "Distribution du nombre de cyclistes",
+    x = "Nombre de cyclistes",
+    y = "Fréquence"
+  ) +
+  theme_minimal()
+```
+
+- Distribution très asymétrique  
+- Beaucoup de **0**  
+- Quelques valeurs extrêmes (~500)
+
+---
+
+# Count moyen selon la météo
+
+```{r echo=FALSE}
+data_plot |>
+  mutate(weather = factor(weather, levels = c("dry", "wet"))) |>
+  group_by(weather) |>
+  summarise(moy = mean(count)) |>
+  ggplot(aes(weather, moy)) +
+  geom_col() +
+  labs(title = "Traffic moyen selon la météo") +
+  theme_minimal()
+```
+
+- Trafic plus élevé en condition **dry**
+- Descriptif → pas causal
+
+---
+
+# Count moyen selon l'heure
+
+```{r echo=FALSE}
+data_plot |>
+  group_by(time) |>
+  summarise(moy = mean(count)) |>
+  ggplot(aes(time, moy, group = 1)) +
+  geom_line() +
+  labs(title = "Évolution selon l'heure") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+- Deux pics : **7h–9h** et **16h–19h**
+
+---
+
+class: center, middle
+
+# 5. Étape 3 – Modèle de Poisson / quasi-Poisson
+
+---
+
+# Vérification de la surdispersion
+
+```{r echo=FALSE}
+kable(
+  tibble(`Dispersion ratio` = round(dispersion_ratio, 2)),
+  caption = "Surdispersion du modèle Poisson"
+)
+```
+
+- Ratio ≈ **17.6** → surdispersion énorme  
+On utilise un **quasi-Poisson**  
+
+---
+
+# Résultats du quasi-Poisson (IRR)
+
+Points clés :
+
+- Plusieurs heures de pointe ont **IRR > 6**  
+- Météo dry → IRR supérieur  
+- conventional cycles → plus de trafic  
+- northbound → direction la plus chargée  
+
+IRR = interprétation **descriptive**, pas causale.
+
+---
+
+class: center, middle
+
+# 6. Résultats, limites et conclusion
+
+---
+
+# Résultats principaux
+
+- Pattern bimodal (matin / soir)  
+- Météo dry → trafic plus élevé  
+- Différences fortes entre modes & directions  
+- Modèle quasi-Poisson confirme les patterns exploratoires  
+
+---
+
+# Limites
+
+- Une seule vague → pas de saisonnalité  
+- Données mostly Weekday  
+- Pas de variables socio-démographiques  
+- Effets propres par site_id non modélisés  
+
+---
+
+# Conclusion
+
+- Les facteurs temporels & météo influencent fortement le trafic cycliste  
+- Cohérence entre exploration & modèle  
+- Illustration claire de tidyverse + modèles Poisson  
+
+.center[
+**Prochaine étape :**  
+→ modèles mixtes, effets aléatoires, interactions
+]
+
+---
+
+class: center, middle
+
+# Merci !  
+## Questions ?

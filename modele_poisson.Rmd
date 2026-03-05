@@ -1,0 +1,132 @@
+---
+title: "Étape 3 – Modèle de Poisson pour les données TfL"
+author: "Équipe 15"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE
+)
+
+library(tidyverse)
+library(janitor)
+library(lubridate)
+library(broom)
+```
+
+# 1. Chargement des données
+
+Nous réutilisons les données nettoyées créées à l’Étape 1.
+
+```{r}
+data <- readr::read_rds("data/tfl_clean.rds")
+
+glimpse(data)
+
+data |>
+summarise(
+n_time = n_distinct(time),
+n_day = n_distinct(day),
+n_weather = n_distinct(weather),
+n_mode = n_distinct(mode),
+n_direction = n_distinct(direction)
+)
+
+
+
+# Échantillon pour accélérer l’ajustement du modèle
+set.seed(123)
+data_sub <- data |>
+  sample_n(50000)
+```
+
+# 2. Ajustement du modèle de Poisson
+
+Nous modélisons count en fonction de variables explicatives :
+
+time (64 niveaux)
+
+weather (dry, wet)
+
+mode (6 types)
+
+direction (4 directions)
+
+```{r}
+modele_pois <- glm(
+  count ~ time + weather + mode + direction,
+  data = data_sub,
+  family = poisson(link = "log")
+)
+
+```
+
+# 3. Vérification de la surdispersion
+
+```{r}
+
+dispersion_ratio <- sum(residuals(modele_pois, type = "pearson")^2) /
+modele_pois$df.residual
+
+dispersion_ratio
+```
+
+# Interprétation automatique
+
+```{r}
+if (dispersion_ratio > 1.5) {
+message("Surdispersion détectée — un modèle quasi-Poisson ou NB est recommandé.")
+} else {
+message("Pas de surdispersion importante — le modèle Poisson est approprié.")
+}
+```
+
+# 4. Ajustement quasi-Poisson (si surdispersion)
+
+```{r}
+
+modele_qpois <- glm(
+  count ~ time + weather + mode + direction,
+  data = data_sub,
+  family = quasipoisson(link = "log")
+)
+
+```
+
+# 5. Résultats du modèle (IRR)
+
+L’IRR (Incidence Rate Ratio) permet une interprétation intuitive :
+
+IRR > 1 → augmentation du count moyen
+
+IRR < 1 → diminution
+
+```{r}
+broom::tidy(modele_qpois, exponentiate = TRUE, conf.int = TRUE)
+```
+
+# 6. Interprétation générale
+
+Les conditions dry présentent généralement un count moyen plus élevé.
+
+Certaines heures (matin + fin de journée) montrent des IRR supérieurs.
+
+Quelques modes (ex : conventional cycles) génèrent plus de trafic.
+
+Certaines directions (ex : northbound) ont des volumes plus importants.
+
+Note : ces interprétations sont descriptives, pas causales.
+
+# 7. Conclusion
+
+Ce modèle de Poisson (et son équivalent quasi-Poisson) confirme statistiquement :
+
+les patterns visuels observés à l’Étape 2,
+
+l’impact des facteurs temporels,
+
+les différences entre conditions météo et directions.

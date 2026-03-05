@@ -1,0 +1,137 @@
+---
+title: "Proposition de projet"
+author: "Salifou Diallo, Mamadou Ciré Bah, Aboubacar Demba Bah, Mamadou Bah"
+output: github_document
+---
+
+```{r load-packages, message = FALSE}
+library(tidyverse)
+library(broom)
+```
+
+## 1. Introduction
+
+Pour ce projet, notre équipe analyse un jeu de données de **comptages cyclistes** publié par **Transport for London (TfL)**, accessible sur le portail officiel **cycling.data.tfl.gov.uk**. Les données correspondent à des comptages automatisés effectués à différents points de mesure dans le centre de Londres durant le **printemps 2024**.
+
+Contrairement aux données de locations individuelles, ce jeu capture le **volume de passages** de cyclistes à des sites fixes, enregistrés à **intervalles réguliers** au cours de la journée. Chaque observation correspond à un **comptage par créneau temporel** (`Time`), **direction** (`Direction`), **type de vélo** (`Mode`) et **conditions météorologiques** (`Weather`).
+
+**Question de recherche :**  
+*Quels facteurs temporels et météorologiques influencent le volume de cyclistes dans le centre de Londres, et observe-t-on des patterns distincts selon les périodes de la journée et les jours de la semaine ?*
+
+Ces données permettent d’explorer des habitudes de mobilité urbaine à partir de variables observables (heure, jour, météo). L’enjeu est pertinent pour la **planification des infrastructures cyclables** et la **mobilité durable**. Le jeu comporte des **variables catégorielles** (`Weather`, `Day`, `Direction`, `Path`, `Mode`), des **numériques** (`Count`) et une **temporelle** (`Time`). Nous travaillerons sur l’ensemble d’environ **870 144** enregistrements (printemps 2024), tout en utilisant un **échantillon** lors du knit pour garder un rendu fluide.
+
+## 2. Données
+
+**Source :** Transport for London (TfL) – *Cycling Open Data*  
+**URL :** https://cycling.data.tfl.gov.uk/  
+**Fichier :** `2024 W1 spring-Inner-Part1.csv` (Inner London – Wave 1, printemps 2024)  
+**Zone :** Inner London (centre)
+
+**Aperçu du jeu de données (skim ou glimpse)**
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+
+csv_path <- "../data/2024 W1 spring-Inner-Part1.csv"
+
+# Pour le knit, on se limite à 10k lignes (le fichier complet ≈ 870k lignes)
+velos <- readr::read_csv(csv_path, show_col_types = FALSE, n_max = 10000)
+
+# Dimensions affichées pour le rendu (échantillon)
+n_lignes <- nrow(velos); n_cols <- ncol(velos)
+cat("**Dimensions (aperçu knit) :**", n_lignes, "lignes ×", n_cols, "colonnes\n\n")
+
+# 5 premières lignes
+knitr::kable(utils::head(velos, 5))
+
+# Vue d'ensemble : skim() si dispo, sinon glimpse()
+if (requireNamespace("skimr", quietly = TRUE)) {
+  skimr::skim(velos)
+} else {
+  dplyr::glimpse(velos)
+}
+
+cat("\n**Noms de colonnes détectés :**\n")
+print(names(velos))
+```
+
+**Dimensions du fichier complet :** environ 870 144 lignes × 11 colonnes  
+**Date d’accès :** 21 octobre 2025
+
+
+## 3. Plan d'analyse de données
+
+### Variables principales
+
+Notre variable de **résultat (Y)** est :  
+- `Count` → le **nombre de cyclistes comptés** par créneau horaire et par point de mesure.
+
+Les variables **prédictives (X)** que nous considérons sont :  
+- `Time` → créneau horaire (variable temporelle continue).  
+- `Day` → type de jour (Weekday / Weekend).  
+- `Weather` → conditions météorologiques (Dry / Wet).  
+- `Mode` → type de vélo (Cargo, Classic, e-bike, etc.).  
+- `Direction` → sens de déplacement (Northbound / Southbound).  
+
+Ces variables permettront de relier les volumes de circulation cycliste aux **conditions temporelles et environnementales**.
+
+---
+
+### Groupes de comparaison
+
+Nous prévoyons plusieurs comparaisons descriptives :  
+- **Weekday vs Weekend** → différence du volume moyen de cyclistes selon le jour.  
+- **Dry vs Wet** → effet des conditions météo sur la fréquentation.  
+- **Morning vs Evening** → pics horaires typiques (analyse par créneau `Time`).  
+- **Type de vélo (`Mode`)** → identification des modes les plus fréquents selon la météo.
+
+Ces comparaisons nous aideront à visualiser les **patterns quotidiens** et les **effets contextuels** sur la pratique cycliste.
+
+---
+
+### Analyse exploratoire préliminaire
+
+Nous commencerons par une **analyse descriptive** des données :
+
+1. **Statistiques de base**  
+   - Moyenne, médiane et écart-type de `Count`.  
+   - Répartition des observations par `Day`, `Weather`, et `Direction`.
+
+2. **Visualisations prévues**
+   - Histogramme ou densité du `Count` (distribution générale des volumes).  
+   - Courbe du `Count` moyen par heure (`Time`) pour visualiser les heures de pointe.  
+   - Boîtes à moustaches (`boxplot`) comparant `Count` entre conditions météo (`Weather`).  
+   - Diagrammes en barres comparant la fréquentation moyenne selon `Day` (Weekday vs Weekend).  
+   - Facettes par `Mode` pour observer les différences selon le type de vélo.
+
+Ces visualisations aideront à **identifier les tendances globales** et les **variables les plus influentes**.
+
+---
+
+### Méthodes envisagées
+
+Pour répondre à notre question de recherche, nous prévoyons plusieurs approches :
+
+1. **Analyse descriptive et graphique** : pour observer visuellement les tendances et patterns horaires.
+2. **Modélisation statistique exploratoire** :
+   - Un **modèle linéaire généralisé (GLM)** de type Poisson ou quasi-Poisson pour modéliser la variable `Count` (car il s’agit d’un comptage).
+   - Variables explicatives : `Time`, `Day`, `Weather`, `Mode` et `Direction`.
+3. **Visualisation des effets** : estimation et représentation graphique des effets de `Weather` et `Day` sur le volume moyen de cyclistes.
+
+---
+
+### Résultats attendus
+
+Les résultats attendus incluent :
+- L’identification de **pics de circulation** selon les heures de la journée.  
+- Une **diminution du volume** lors de conditions météorologiques défavorables.  
+- Des différences marquées entre **jours de semaine** et **week-end**.  
+- Une mise en évidence de certaines tendances selon le **type de vélo** ou la **direction de déplacement**.
+
+Ces résultats permettront de **mieux comprendre les facteurs influençant la mobilité cycliste** à Londres et d’apporter des éléments utiles à la planification urbaine.
+
+---
+
+> *Remarque : Cette analyse exploratoire sera amenée à évoluer selon les observations et les résultats obtenus lors du traitement complet des données.*
+
+

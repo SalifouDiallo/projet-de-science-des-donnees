@@ -1,0 +1,126 @@
+---
+title: "Étape 2 – Analyse exploratoire des données TfL"
+author: "Équipe 15"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE
+)
+
+library(tidyverse)
+library(janitor)
+library(lubridate)
+```
+
+## 1. Introduction
+
+Cette étape vise à explorer visuellement les données de comptage cycliste
+afin d’identifier des patterns temporels et contextuels.
+Les visualisations respectent explicitement les principes vus dans les
+modules récents du cours :
+
+- Mauvaises représentations : axes honnêtes, graphiques non trompeurs
+- Biais algorithmique : pas d’interprétation causale, seulement descriptive
+- Confidentialité : données agrégées, aucun identifiant individuel
+- Interprétation des modèles : préparation à l’utilisation future d’un modèle de Poisson
+
+# 2. Chargement des données nettoyées
+
+On charge le fichier traité à l’Étape 1 (data/tfl_clean.rds).
+
+```{r}
+data <- readr::read_rds("data/tfl_clean.rds")
+glimpse(data)
+```
+
+# 3. Statistiques descriptives de base
+
+```{r}
+summary(data$count)
+
+data |>
+summarise(
+moyenne = mean(count),
+mediane = median(count),
+ecart_type = sd(count),
+min = min(count),
+max = max(count)
+)
+```
+
+# 4. Graphique 1 – Distribution du nombre de cyclistes
+
+Histogramme descriptif respectant les règles visuelles du cours
+(axe des x débutant à 0, pas de manipulation d’échelle).
+
+```{r}
+ggplot(data, aes(x = count)) +
+geom_histogram(binwidth = 5, color = "white") +
+labs(
+title = "Distribution du nombre de cyclistes par intervalle",
+x = "Nombre de cyclistes (Count)",
+y = "Fréquence"
+) +
+theme_minimal()
+```
+
+# 5. Graphique 2 – Count moyen selon la météo
+
+Comparaison descriptive entre conditions dry et wet
+(toujours sans causalité, comme rappelé dans le cours).
+
+```{r}
+data |>
+mutate(weather = factor(weather, levels = c("dry", "wet"))) |>
+group_by(weather) |>
+summarise(moyenne = mean(count)) |>
+ggplot(aes(x = weather, y = moyenne)) +
+geom_col() +
+labs(
+title = "Nombre moyen de cyclistes selon la météo",
+x = "Condition météo",
+y = "Count moyen"
+) +
+theme_minimal()
+```
+
+# 6. Graphique 3 – Count moyen selon l'heure de la journée
+
+Analyse des patterns temporels :
+pics matin/soir et creux de journée, utiles pour le futur modèle.
+
+```{r}
+data |>
+group_by(time) |>
+summarise(moyenne = mean(count)) |>
+ggplot(aes(x = time, y = moyenne, group = 1)) +
+geom_line() +
+labs(
+title = "Évolution du count moyen selon l'heure de la journée",
+x = "Heure (Time)",
+y = "Count moyen"
+) +
+theme_minimal() +
+theme(axis.text.x = element_text(angle = 90, vjust = 0.5))
+```
+
+## 7. Commentaires exploratoires
+
+La distribution de count est très asymétrique : beaucoup d’intervalles
+présentent zéro cycliste, et quelques périodes montrent des volumes élevés.
+
+On observe un count moyen plus élevé en condition dry qu’en condition wet :
+effet descriptif seulement, sans inférence.
+
+Le pattern horaire montre clairement des pics en début et fin de journée
+(heures de travail), ce qui guidera l’Étape 3 (modèle de Poisson).
+
+Aucune donnée personnelle n’est présente : seulement des comptages agrégés.
+
+Les figures sont construites selon les principes du cours :
+axes honnêtes, représentation fidèle, absence de causalité forcée.

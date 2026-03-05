@@ -1,0 +1,9 @@
+# Fichiers volumineux ignorés
+data/tfl_clean.csv
+data/tfl_clean.rds
+
+
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
