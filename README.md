@@ -114,10 +114,10 @@ Ce projet fournit des **insights importants** pour la planification des infrastr
 ## Data Visualization
 
 ### Distribution of cyclist counts
-![Histogram](histogram_cyclists.png)
+![Histogram](docs/figures/histogram_cyclists.png)
 
 ### Average cyclists by weather
-![Weather](cyclists_weather_barplot.png)
+![Weather](docs/figures/cyclists_weather_barplot.png)
 
 ### Average cyclists by hour
-![Hourly traffic](cyclists_by_hour.png)
+![Hourly traffic](docs/figures/cyclists_by_hour.png)
