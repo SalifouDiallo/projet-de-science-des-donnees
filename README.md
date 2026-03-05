@@ -111,3 +111,13 @@ Les analyses exploratoires et le modèle quasi-Poisson montrent que les **facteu
 
 Ce projet fournit des **insights importants** pour la planification des infrastructures cyclables et illustre l’application du workflow **tidyverse + GLM** enseigné dans le cours.
 
+## Data Visualization
+
+### Distribution of cyclist counts
+![Histogram](histogram_cyclists.png)
+
+### Average cyclists by weather
+![Weather](cyclists_weather_barplot.png)
+
+### Average cyclists by hour
+![Hourly traffic](cyclists_by_hour.png)
