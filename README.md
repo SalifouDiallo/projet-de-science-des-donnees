@@ -1,151 +1,164 @@
-# Résumé exécutif – Projet final TfL (Équipe 15)
+# 🚴 Analyse du trafic cycliste à Londres — Transport for London (TfL)
 
-Ce projet analyse les **patterns de mobilité cycliste à Londres** à partir du jeu de données public **Transport for London (TfL)**.  
-Les données proviennent de systèmes officiels de comptage automatisé et couvrent plus de **870 000 observations** (printemps 2024, intervalles de 15 minutes).  
-Chaque ligne représente un nombre de cyclistes selon **l’heure**, **la direction** et **le mode de déplacement**.
+![R](https://img.shields.io/badge/R-4.x-276DC3?style=flat-square&logo=r&logoColor=white)
+![Tidyverse](https://img.shields.io/badge/Tidyverse-Data_Wrangling-1A162D?style=flat-square)
+![Modèle](https://img.shields.io/badge/Modèle-Quasi--Poisson-orange?style=flat-square)
+![Données](https://img.shields.io/badge/Données-870_144_observations-green?style=flat-square)
+![Équipe](https://img.shields.io/badge/Équipe-4_étudiants-blue?style=flat-square)
 
----
-
-## Contexte académique
-
-Ce projet a été réalisé dans le cadre du cours  
-**Science des données et intelligence d’affaires (8INF404)**  
-à l’**Université du Québec à Chicoutimi (UQAC)** durant la session **Automne 2025**.
-
-Description officielle du cours :  
-https://programmes.uqac.ca/8inf404
-
-Le projet a été réalisé en **équipe de quatre étudiants**.  
-Dans l’équipe, j’ai contribué principalement à **l’analyse exploratoire des données, à la visualisation et à la modélisation statistique**.
+> Analyse complète des **patterns de mobilité cycliste à Londres** à partir du jeu de données public **Transport for London (TfL)** — 870 144 observations, printemps 2024.  
+> Réalisé dans le cadre du cours **8INF404 — Science des données et intelligence d'affaires** — UQAC, Automne 2025.
 
 ---
 
-## Question de recherche
+## 📋 Table des matières
 
-**Comment les facteurs temporels (heure, jour), contextuels (météo) et opérationnels (mode, direction) influencent-ils l’évolution du trafic cycliste moyen à Londres ?**
-
-### Objectif
-
-- Identifier des tendances utiles pour la planification urbaine  
-- Utiliser les outils du cours : visualisation, exploration, modèles de comptage (**Poisson / quasi-Poisson**)
+- [Question de recherche](#-question-de-recherche)
+- [Données](#-données)
+- [Méthodologie](#-méthodologie)
+- [Résultats](#-résultats-principaux)
+- [Visualisations](#-visualisations)
+- [Structure du projet](#-structure-du-projet)
+- [Reproduction](#-reproduction-de-lanalyse)
 
 ---
 
-## Données
+## 🔬 Question de recherche
 
-- Fichier nettoyé final : `tfl_clean.rds`  
-- Nombre total : **870 144 lignes**, **11 variables**
+> **Comment les facteurs temporels (heure, jour), contextuels (météo) et opérationnels (mode, direction) influencent-ils l'évolution du trafic cycliste moyen à Londres ?**
+
+**Objectifs :**
+- Identifier des tendances utiles pour la planification urbaine
+- Appliquer le workflow complet de science des données : nettoyage → exploration → modélisation
+- Utiliser des modèles de comptage (**Poisson / quasi-Poisson**) adaptés aux données de trafic
+
+---
+
+## 📦 Données
+
+| Attribut | Valeur |
+|---|---|
+| Source | Transport for London (TfL) — données publiques |
+| Période | Printemps 2024 (W1 spring) |
+| Observations | **870 144 lignes** |
+| Variables | **11 colonnes** |
+| Intervalle | 15 minutes |
 
 ### Variables clés
 
-- **count** : nombre de cyclistes  
-- **time** : heure (64 niveaux de 15 minutes)  
-- **day** : weekday  
-- **weather** : dry / wet  
-- **mode** : 6 types  
-- **direction** : 4 directions  
+| Variable | Description |
+|---|---|
+| `count` | Nombre de cyclistes comptés |
+| `time` | Heure (64 niveaux de 15 min) |
+| `day` | Jour de la semaine |
+| `weather` | Conditions météo (dry / wet) |
+| `mode` | Type de vélo (6 catégories) |
+| `direction` | Direction (4 orientations) |
 
-Aucune donnée personnelle n’est présente dans ce jeu de données : il s’agit uniquement de **comptages anonymes de trafic cycliste**.
-
----
-
-# Méthodologie
-
-## Étape 1 – Nettoyage
-
-- Normalisation des noms (`clean_names`)  
-- Uniformisation des variables (`day`, `weather`, `mode`, `direction`)  
-- Conversion des types (facteurs et entiers)  
-- Suppression des doublons et des valeurs manquantes  
-- Export des fichiers :  
-
-- `tfl_clean.csv`  
-- `tfl_clean.rds`
+> ⚠️ Aucune donnée personnelle — uniquement des **comptages anonymes de trafic**.
 
 ---
 
-## Étape 2 – Analyse exploratoire
+## 🔧 Méthodologie
 
-Trois graphiques principaux ont été produits pour explorer les données.
+### Étape 1 — Nettoyage (`nettoyage_donnees.Rmd`)
 
-### Histogramme du nombre de cyclistes  
-→ Distribution très asymétrique, avec une forte présence de valeurs faibles et de zéros.
+- Normalisation des noms de colonnes (`clean_names`)
+- Uniformisation des variables catégorielles (`day`, `weather`, `mode`, `direction`)
+- Conversion des types (facteurs et entiers)
+- Suppression des doublons et valeurs manquantes
+- Export : `tfl_clean.csv` et `tfl_clean.rds`
 
-### Count moyen selon la météo  
-→ Le trafic cycliste est nettement plus élevé lorsque la météo est **dry**.
+### Étape 2 — Analyse exploratoire (`analyse_exploratoire.Rmd`)
 
-### Évolution du count moyen selon l’heure  
-→ Deux pics très clairs apparaissent :  
+Trois visualisations principales :
 
-- **7h–9h** (trajets domicile → travail)  
-- **16h–19h** (trajets retour)
+1. **Distribution du count** → asymétrie forte, présence de nombreux zéros
+2. **Count moyen selon la météo** → trafic nettement plus élevé par temps sec
+3. **Évolution horaire** → deux pics clairs : **7h–9h** et **16h–19h**
 
-Ces visualisations respectent les bonnes pratiques de visualisation de données vues dans le cours.
-
----
-
-## Étape 3 – Modèle de Poisson / quasi-Poisson
+### Étape 3 — Modélisation (`modele_poisson.Rmd`)
 
 Modèle ajusté :
+```r
 count ~ time + weather + mode + direction
+```
 
-
-Une **surdispersion élevée** a été observée (**≈ 17.6**), ce qui a conduit à utiliser un modèle **quasi-Poisson**.
-
-### Résultats (IRR)
-
-Les principaux résultats montrent que :
-
-- Certains créneaux horaires ont des **IRR supérieurs à 6** (ex. **7h30–8h15**)  
-- La météo **dry** est associée à une **hausse marquée du trafic cycliste**  
-- Les modes comme **conventional cycles** présentent des volumes plus élevés  
-- La direction **northbound** apparaît plus fréquentée
-
-Les IRR sont interprétés de manière descriptive dans le cadre de l’analyse.
+Une **surdispersion élevée (≈ 17.6)** a conduit à utiliser un modèle **quasi-Poisson**.
 
 ---
 
-# Résultats principaux
+## 📊 Résultats principaux
 
-- **Pattern bimodal** du trafic cycliste : pic le matin et pic le soir  
-- Les conditions **dry** augmentent significativement la fréquentation  
-- Les **modes de déplacement** et les **directions** influencent fortement les volumes observés  
-- Le modèle **quasi-Poisson** confirme les tendances observées dans les visualisations
-
----
-
-# Limites
-
-Certaines limites doivent être mentionnées :
-
-- Les données proviennent d’une seule vague (**W1 spring**)  
-- L’analyse concerne principalement des **jours de semaine**  
-- Absence de variables socio-démographiques  
-- La variable `site_id` n’a pas été intégrée dans le modèle
+- **Pattern bimodal** du trafic : pic le matin (7h–9h) et pic le soir (16h–19h)
+- Certains créneaux ont des **IRR > 6** (ex. 7h30–8h15)
+- La météo **dry** est associée à une **hausse significative** du trafic cycliste
+- Les **conventional cycles** présentent les volumes les plus élevés
+- La direction **northbound** est la plus fréquentée
 
 ---
 
-# Conclusion
+## 📸 Visualisations
 
-Les analyses exploratoires et le modèle quasi-Poisson montrent que les **facteurs temporels** (heures de pointe) et **contextuels** (météo) influencent significativement les volumes cyclistes à Londres.
+**Distribution du nombre de cyclistes**
+![Histogramme](docs/figures/histogram_cyclists.png)
 
-Ce projet illustre l’application complète du **workflow de science des données** enseigné dans le cours, incluant :
+**Trafic moyen selon la météo**
+![Météo](docs/figures/cyclists_weather_barplot.png)
 
-- nettoyage des données  
-- visualisation exploratoire  
-- modélisation statistique avec **GLM**
-
-Les résultats fournissent également des **indications utiles pour la planification des infrastructures cyclables**.
+**Évolution horaire du trafic cycliste**
+![Trafic horaire](docs/figures/cyclists_by_hour.png)
 
 ---
 
-## Data Visualization
+## 📁 Structure du projet
 
-### Distribution of cyclist counts
-![Histogram](docs/figures/histogram_cyclists.png)
+```
+projet-de-science-des-donnees/
+├── nettoyage_donnees.Rmd         # Étape 1 — Nettoyage des données
+├── analyse_exploratoire.Rmd      # Étape 2 — Visualisations exploratoires
+├── modele_poisson.Rmd            # Étape 3 — Modèle quasi-Poisson
+├── README.Rmd                    # Résumé exécutif
+├── data/
+│   ├── tfl_cycling_2024_spring.csv   # Données brutes TfL
+│   └── README.md
+├── docs/
+│   └── figures/                  # Graphiques générés
+│       ├── histogram_cyclists.png
+│       ├── cyclists_weather_barplot.png
+│       └── cyclists_by_hour.png
+└── presentation/
+    └── presentation.Rmd          # Présentation xaringan
+```
 
-### Average cyclists by weather
-![Weather](docs/figures/cyclists_weather_barplot.png)
+---
 
-### Average cyclists by hour
-![Hourly traffic](docs/figures/cyclists_by_hour.png)
+## ▶️ Reproduction de l'analyse
+
+### Prérequis
+
+```r
+install.packages(c("tidyverse", "janitor", "ggplot2", "knitr", "rmarkdown"))
+```
+
+### Exécution
+
+```r
+# Étape 1 — Nettoyage
+rmarkdown::render("nettoyage_donnees.Rmd")
+
+# Étape 2 — Analyse exploratoire
+rmarkdown::render("analyse_exploratoire.Rmd")
+
+# Étape 3 — Modélisation
+rmarkdown::render("modele_poisson.Rmd")
+```
+
+---
+
+## 👤 Auteur
+
+**Salifou Diallo** — contribution principale : analyse exploratoire, visualisation et modélisation statistique  
+Projet réalisé en équipe de 4 étudiants — UQAC, Automne 2025  
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=flat-square&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/salifou-diallo-3117702b2/)
+[![GitHub](https://img.shields.io/badge/GitHub-181717?style=flat-square&logo=github&logoColor=white)](https://github.com/SalifouDiallo)
