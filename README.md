@@ -7,7 +7,7 @@
 ![Équipe](https://img.shields.io/badge/Équipe-4_étudiants-blue?style=flat-square)
 
 > Analyse complète des **patterns de mobilité cycliste à Londres** à partir du jeu de données public **Transport for London (TfL)** — 870 144 observations, printemps 2024.  
-> Réalisé dans le cadre du cours **8INF404 — Science des données et intelligence d'affaires** — UQAC, Automne 2025.
+> Réalisé dans le cadre du cours **[8INF404 — Science des données et intelligence d'affaires](https://programmes.uqac.ca/8inf404)** — UQAC, Automne 2025.
 
 ---
 
